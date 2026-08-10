@@ -2,63 +2,280 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Домашний Claude — мост</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🏠 Домашний Claude — мост</title>
 <style>
-  body{font-family:Segoe UI,sans-serif;max-width:800px;margin:40px auto;padding:0 16px;background:#0d1117;color:#e6edf3}
-  textarea{width:100%;height:110px;background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:8px;padding:10px}
-  button{background:#238636;color:#fff;border:0;border-radius:8px;padding:10px 18px;cursor:pointer;margin-top:8px}
-  button:disabled{background:#21262d;color:#8b949e}
-  pre{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px;white-space:pre-wrap;min-height:120px}
-  .row{display:flex;gap:8px}
-  input{background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:8px;padding:8px;flex:1}
-  #status{color:#8b949e;margin:8px 0}
+:root{
+  --bg:#0a0c10; --panel:#12151c; --panel2:#1a1e27; --border:#2a2f3a;
+  --text:#e6edf3; --muted:#8b949e; --accent:#2ea043; --blue:#1f6feb; --red:#f85149;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1100px 550px at 85% -10%, rgba(31,111,235,.14), transparent),
+    radial-gradient(900px 500px at 5% 110%, rgba(46,160,67,.10), transparent),
+    var(--bg);
+  color:var(--text);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  display:flex;justify-content:center;
+}
+.app{width:min(880px,100%);height:100%;display:flex;flex-direction:column;gap:12px;padding:16px}
+
+/* ── Шапка ─────────────────────────────── */
+header{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;
+  background:rgba(18,21,28,.85);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:14px;
+}
+.logo{
+  width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--blue),#7c3aed);font-size:20px;flex-shrink:0;
+}
+.titles h1{font-size:16px;font-weight:600}
+.status{font-size:12px;color:var(--muted)}
+.status.on{color:var(--accent)}
+.status.off{color:var(--red)}
+.icon-btn{
+  margin-left:auto;width:32px;height:32px;border-radius:9px;border:1px solid var(--border);
+  background:var(--panel2);color:var(--muted);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.2s;
+}
+.icon-btn:hover{color:var(--text);border-color:var(--muted);transform:rotate(45deg)}
+
+/* ── Чат ───────────────────────────────── */
+.chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:6px 4px;scroll-behavior:smooth}
+.msg{
+  max-width:82%;padding:12px 15px;border-radius:14px;line-height:1.55;
+  white-space:pre-wrap;word-break:break-word;font-size:14px;
+  animation:pop .25s ease;
+}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,#1f6feb,#1758c9);border-bottom-right-radius:4px}
+.msg.bot{align-self:flex-start;background:var(--panel2);border:1px solid var(--border);border-bottom-left-radius:4px}
+.msg.sys{align-self:center;background:none;border:none;color:var(--muted);font-size:12.5px;text-align:center;max-width:92%}
+.msg.error{align-self:flex-start;background:rgba(248,81,73,.10);border:1px solid rgba(248,81,73,.45);color:#ffa198}
+.bubble-wrap{display:flex;align-items:flex-end;gap:6px;align-self:flex-start;max-width:100%}
+.bubble-wrap .msg{align-self:auto}
+.copy-btn{
+  width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--panel);
+  color:var(--muted);cursor:pointer;font-size:13px;opacity:0;transition:.2s;flex-shrink:0;
+}
+.bubble-wrap:hover .copy-btn{opacity:1}
+.copy-btn:hover{color:var(--text)}
+.typing{display:inline-flex;gap:5px;padding:4px 2px}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+/* ── Поле ввода ────────────────────────── */
+.composer{display:flex;gap:10px;padding:10px;background:rgba(18,21,28,.85);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:14px}
+textarea{
+  flex:1;resize:none;height:54px;background:var(--panel2);color:var(--text);
+  border:1px solid var(--border);border-radius:10px;padding:12px 14px;font:inherit;font-size:14px;outline:none;transition:.2s;
+}
+textarea:focus{border-color:var(--blue)}
+.send-btn{
+  width:54px;border:none;border-radius:10px;cursor:pointer;color:#fff;
+  background:linear-gradient(135deg,var(--accent),#1a7f37);
+  display:flex;align-items:center;justify-content:center;transition:.2s;
+}
+.send-btn:hover{filter:brightness(1.15)}
+.send-btn:disabled{background:var(--panel2);color:var(--muted);cursor:not-allowed}
+
+/* ── Модальное окно настроек ───────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:10;opacity:1;transition:.2s}
+.overlay.hidden{opacity:0;pointer-events:none}
+.modal{
+  width:min(420px,92%);background:var(--panel);border:1px solid var(--border);
+  border-radius:16px;padding:22px;animation:pop .2s ease;
+}
+.modal-head{display:flex;align-items:center;margin-bottom:16px}
+.modal-head h2{font-size:16px}
+.modal-head .icon-btn{margin-left:auto}
+.modal label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px}
+.modal input{
+  width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--border);
+  border-radius:9px;padding:10px 12px;font-size:13px;outline:none;
+}
+.modal input:focus{border-color:var(--blue)}
+.row{display:flex;gap:8px}
+.btn{margin-top:14px;width:100%;padding:10px;border-radius:9px;border:none;cursor:pointer;font-size:13.5px;font-weight:600;transition:.2s}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.ghost{background:none;border:1px solid var(--border);color:var(--muted);margin-top:8px}
+.btn.ghost:hover{color:var(--text);border-color:var(--muted)}
+#settingsMsg{margin-top:10px;font-size:12.5px;min-height:16px}
+#settingsMsg .ok{color:var(--accent)}
+#settingsMsg .err{color:var(--red)}
+
+/* ── Тост ──────────────────────────────── */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 18px;font-size:13px;opacity:0;transition:.3s;z-index:20;
+}
+.toast.show{opacity:1;transform:translateX(-50%)}
 </style>
 </head>
 <body>
-<h2>🏠 Домашний Claude (мост через GitHub)</h2>
-<div class="row">
-  <input id="token" type="password" placeholder="Вставьте Personal Access Token (ghp_...)">
-  <button onclick="saveToken()">Сохранить токен</button>
+<div class="app">
+  <header>
+    <div class="logo">🏠</div>
+    <div class="titles">
+      <h1>Домашний Claude</h1>
+      <span id="connStatus" class="status">● проверяю…</span>
+    </div>
+    <!-- маленькая кнопка настроек -->
+    <button class="icon-btn" id="settingsBtn" title="Настройки">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </header>
+
+  <main class="chat" id="chat">
+    <div class="msg sys">Здравствуйте! Откройте настройки (⚙ справа сверху), сохраните токен — и спрашивайте. Задачи уходят домой через GitHub, ответы возвращаются сюда.</div>
+  </main>
+
+  <footer class="composer">
+    <textarea id="prompt" placeholder="Спросите Claude…  (Enter — отправить, Shift+Enter — новая строка)"></textarea>
+    <button class="send-btn" id="send" title="Отправить">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </footer>
 </div>
-<div id="status">Токен не сохранён</div>
-<textarea id="prompt" placeholder="Введите вопрос / задачу для Claude…"></textarea>
-<button id="send" onclick="sendPrompt()">Отправить домой</button>
-<h3>Ответ:</h3>
-<pre id="out">—</pre>
+
+<!-- Настройки (скрыты за маленькой кнопкой) -->
+<div class="overlay hidden" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>⚙ Настройки</h2>
+      <button class="icon-btn" id="closeBtn" title="Закрыть">✕</button>
+    </div>
+    <label>Personal Access Token (GitHub)</label>
+    <div class="row">
+      <input id="token" type="password" placeholder="ghp_…">
+      <button class="icon-btn" id="eyeBtn" title="Показать/скрыть" style="margin:0">👁</button>
+    </div>
+    <label>Репозиторий-мост (владелец/имя)</label>
+    <input id="repoPath" placeholder="vladimirjob65/opros-bridge">
+    <button class="btn primary" id="saveBtn">Сохранить</button>
+    <button class="btn ghost" id="testBtn">Проверить соединение</button>
+    <div id="settingsMsg"></div>
+  </div>
+</div>
+
 <script>
-const OWNER="vladimirjob65", REPO="opros-bridge", API="https://api.github.com";
-const token=()=>localStorage.getItem("gh_token")||"";
-function saveToken(){localStorage.setItem("gh_token",document.getElementById("token").value.trim());
-  document.getElementById("status").textContent="✅ Токен сохранён (только в вашем браузере)";}
-if(token())document.getElementById("status").textContent="✅ Токен уже сохранён";
+const $=id=>document.getElementById(id);
+const API="https://api.github.com";
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const b64e=s=>btoa(unescape(encodeURIComponent(s)));
-const b64d=s=>decodeURIComponent(escape(atob(s.replace(/\n/g,""))));
-async function api(m,p,b){
-  const r=await fetch(`${API}/repos/${OWNER}/${REPO}/${p}`,{method:m,
-    headers:{Authorization:`Bearer ${token()}`,Accept:"application/vnd.github+json"},
-    body:b?JSON.stringify(b):undefined});
+const b64d=s=>decodeURIComponent(escape(atob(s.replace(/\s/g,""))));
+
+let cfg=Object.assign({owner:"vladimirjob65",repo:"opros-bridge",token:""},
+        JSON.parse(localStorage.getItem("bridge_cfg")||"{}"));
+const persist=()=>localStorage.setItem("bridge_cfg",JSON.stringify(cfg));
+
+/* ── GitHub API ── */
+async function api(method,path,body){
+  const r=await fetch(`${API}/repos/${cfg.owner}/${cfg.repo}/${path}`,{
+    method,
+    headers:{Authorization:`Bearer ${cfg.token}`,Accept:"application/vnd.github+json"},
+    body:body?JSON.stringify(body):undefined
+  });
   if(r.status===404)return null;
   if(!r.ok)throw new Error(`GitHub ${r.status}: ${(await r.text()).slice(0,200)}`);
   return r.json();
 }
-async function sendPrompt(){
-  const text=document.getElementById("prompt").value.trim();
-  if(!text)return alert("Введите вопрос");
-  if(!token())return alert("Сначала сохраните токен");
-  const out=document.getElementById("out"),btn=document.getElementById("send");
-  btn.disabled=true;out.textContent="⏳ Отправляю задачу…";
-  try{
-    const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-    await api("PUT",`contents/tasks/${id}.json`,{message:`task ${id}`,content:b64e(JSON.stringify({prompt:text}))});
-    out.textContent="⏳ Задача ушла домой. Жду ответ (домашний ПК должен быть включён)…";
-    while(true){
-      await new Promise(r=>setTimeout(r,5000));
-      const res=await api("GET",`contents/results/${id}.txt`);
-      if(res){out.textContent=b64d(res.content);break;}
-    }
-  }catch(e){out.textContent="❌ "+e.message;}
-  btn.disabled=false;
+
+/* ── Чат ── */
+function addMsg(role,text){
+  const div=document.createElement("div");
+  div.className="msg "+role;
+  div.textContent=text;
+  if(role==="bot"){
+    const wrap=document.createElement("div");
+    wrap.className="bubble-wrap";
+    const cp=document.createElement("button");
+    cp.className="copy-btn";cp.textContent="⧉";cp.title="Скопировать";
+    cp.onclick=()=>{navigator.clipboard.writeText(text);cp.textContent="✓";setTimeout(()=>cp.textContent="⧉",1200);};
+    wrap.append(div,cp);$("chat").append(wrap);
+  }else $("chat").append(div);
+  $("chat").scrollTop=$("chat").scrollHeight;
+  return div;
 }
+const typingHTML='<span class="typing"><span></span><span></span><span></span></span>';
+
+async function sendPrompt(){
+  const text=$("prompt").value.trim();
+  if(!text)return;
+  if(!cfg.token){openSettings();toast("Сначала сохраните токен в настройках");return;}
+  $("prompt").value="";
+  addMsg("user",text);
+  const waitEl=addMsg("bot","");waitEl.innerHTML=typingHTML;
+  $("send").disabled=true;
+  const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  try{
+    await api("PUT",`contents/tasks/${id}.json`,
+      {message:`task ${id}`,content:b64e(JSON.stringify({prompt:text}))});
+    const started=Date.now();
+    while(true){
+      await sleep(5000);
+      if(Date.now()-started>10*60*1000)throw new Error("Домашний ПК не ответил за 10 минут");
+      const res=await api("GET",`contents/results/${id}.txt`);
+      if(res){waitEl.remove();addMsg("bot",b64d(res.content));break;}
+    }
+  }catch(e){
+    waitEl.remove();addMsg("error","❌ "+e.message);
+  }
+  $("send").disabled=false;
+}
+
+/* ── Статус ── */
+async function updateStatus(){
+  const el=$("connStatus");
+  if(!cfg.token){el.textContent="● токен не задан";el.className="status off";return;}
+  try{await api("GET","");el.textContent="● на связи";el.className="status on";}
+  catch(e){el.textContent="● нет связи";el.className="status off";}
+}
+
+/* ── Настройки ── */
+function openSettings(){
+  $("overlay").classList.remove("hidden");
+  $("token").value=cfg.token;
+  $("repoPath").value=cfg.owner+"/"+cfg.repo;
+  $("settingsMsg").textContent="";
+}
+function closeSettings(){$("overlay").classList.add("hidden");}
+function saveSettings(){
+  cfg.token=$("token").value.trim();
+  const parts=($("repoPath").value.trim()||"vladimirjob65/opros-bridge").split("/");
+  cfg.owner=parts[0];cfg.repo=parts[1]||"opros-bridge";
+  persist();closeSettings();updateStatus();toast("✅ Настройки сохранены");
+}
+async function testConnection(){
+  const m=$("settingsMsg");m.textContent="Проверяю…";
+  try{await api("GET","");m.innerHTML='<span class="ok">✅ Соединение работает, репозиторий доступен</span>';}
+  catch(e){m.innerHTML='<span class="err">❌ '+e.message+"</span>";}
+}
+function toast(t){
+  const d=document.createElement("div");d.className="toast";d.textContent=t;
+  document.body.append(d);setTimeout(()=>d.classList.add("show"));
+  setTimeout(()=>{d.classList.remove("show");setTimeout(()=>d.remove(),300);},2500);
+}
+
+/* ── Привязки ── */
+$("send").onclick=sendPrompt;
+$("settingsBtn").onclick=openSettings;
+$("closeBtn").onclick=closeSettings;
+$("saveBtn").onclick=saveSettings;
+$("testBtn").onclick=testConnection;
+$("eyeBtn").onclick=()=>{$("token").type=$("token").type==="password"?"text":"password";};
+$("overlay").onclick=e=>{if(e.target===$("overlay"))closeSettings();};
+$("prompt").addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendPrompt();}
+});
+updateStatus();
 </script>
 </body>
 </html>
